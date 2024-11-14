@@ -1,0 +1,174 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-time Chatroom</title>
+  <style>
+    /* Basic Reset */
+    body, h2, div, input, button {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Main styling for the body */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #afc6dd;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* Chatroom title styling */
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    /* Styling the chatbox to make it scrollable */
+    #chatbox {
+      width: 100%;
+      max-width: 500px;
+      height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      margin-bottom: 20px;
+      padding: 10px;
+      background-color: #fff;
+      border-radius: 8px;
+    }
+
+    /* Input fields styling */
+    #username, #messageInput, #privateUser, #privateMessage {
+      width: 80%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+
+    /* Send button styling */
+    button {
+      padding: 10px 20px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Styling for the private message inputs */
+    .private-msg-container {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    /* Flexbox layout for the container */
+    .input-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Styling for message display */
+    p {
+      font-size: 14px;
+      margin: 5px 0;
+    }
+
+    strong {
+      color: #007bff;
+    }
+
+    /* Timestamp styling */
+    .timestamp {
+      font-size: 12px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <!-- Title of the Chatroom -->
+  <h2>Under_Rated Chatroom</h2>
+
+  <!-- Username input and Join button -->
+  <div class="input-container">
+    <input type="text" id="username" placeholder="Enter username">
+    <button onclick="setUsername()">Join Chat</button>
+  </div>
+
+  <!-- Chatbox area to display messages -->
+  <div id="chatbox"></div>
+
+  <!-- Message input and Send button -->
+  <div class="input-container">
+    <input type="text" id="messageInput" placeholder="Type a message">
+    <button id="sendBtn" onclick="sendMessage()">Send</button>
+  </div>
+
+  <!-- Private message section -->
+  <div class="private-msg-container">
+    <input type="text" id="privateUser" placeholder="Private message to (username)">
+    <input type="text" id="privateMessage" placeholder="Private message">
+    <button onclick="sendPrivateMessage()">Send Private</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let username;
+
+    function setUsername() {
+      username = document.getElementById('username').value;
+      if (username) {
+        socket.emit('setUsername', username);
+        document.getElementById('username').disabled = true;
+      }
+    }
+
+    function sendMessage() {
+      const message = document.getElementById('messageInput').value;
+      if (message) {
+        socket.emit('chatMessage', message);
+        document.getElementById('messageInput').value = '';
+      }
+    }
+
+    function sendPrivateMessage() {
+      const to = document.getElementById('privateUser').value;
+      const message = document.getElementById('privateMessage').value;
+      if (to && message) {
+        socket.emit('privateMessage', { from: username, to, message });
+        document.getElementById('privateMessage').value = '';
+      }
+    }
+
+    socket.on('message', (data) => {
+      const chatbox = document.getElementById('chatbox');
+      chatbox.innerHTML += `<p><strong>${data.user}</strong> <span class="timestamp">(${data.timestamp})</span>: ${data.message}</p>`;
+      chatbox.scrollTop = chatbox.scrollHeight;
+    });
+
+    socket.on('privateMessage', (data) => {
+      const chatbox = document.getElementById('chatbox');
+      chatbox.innerHTML += `<p><strong>Private from ${data.from}</strong> <span class="timestamp">(${data.timestamp})</span>: ${data.message}</p>`;
+      chatbox.scrollTop = chatbox.scrollHeight;
+    });
+
+    socket.on('userList', (users) => {
+      console.log('Connected users:', users);
+    });
+  </script>
+</body>
+</html>
+
